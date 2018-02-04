@@ -16,17 +16,17 @@ var palette;
 function setup() {
     createCanvas(600, 600);
     pixelDensity(1);
-    maxZoom = 10000;
+    maxZoom = 100000;
 
-    XSlider = createSlider(-2.5, 2.5, 0, 0.01);
-    YSlider = createSlider(-2.5, 2.5, 0, 0.01);
+    XSlider = createSlider(-2.5, 2.5, 0, 100/maxZoom);
+    YSlider = createSlider(-2.5, 2.5, 0, 100/maxZoom);
     ZoomSlider = createSlider(1, maxZoom, maxZoom, 5);
     IterationSlider = createSlider(1, 255, 50, 5);
 
     frDiv = createDiv('');
 
-    // palette = palette('tol-rainbow', 255);
-    palette = palette('tol-dv', 255);
+    palette = palette('tol-rainbow', 255);
+    // palette = palette('tol-dv', 255);
     // palette = palette('tol-sq', 255);
 }
 
