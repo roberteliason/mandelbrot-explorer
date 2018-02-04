@@ -1,0 +1,12 @@
+body {
+	background: black;
+}
+
+canvas {
+	display: block;
+	margin: 2rem auto 0 auto;
+}
+
+input[type=range] {
+	width: 24%;
+}
