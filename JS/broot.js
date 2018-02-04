@@ -3,31 +3,46 @@
 // http://patreon.com/codingtrain
 // Code for: https://youtu.be/6z7GQewK-Ks
 
+var canvas;
 var XSlider;
 var YSlider;
 var ZoomSlider;
 var IterationSlider;
+var paletteSelector;
 var maxZoom;
 
 var frDiv;
-var palette;
+var activePalette;
 
 
 function setup() {
-    createCanvas(600, 600);
-    pixelDensity(1);
     maxZoom = 100000;
 
+    canvas = createCanvas(600, 600);
+    canvas.parent( 'canvas' );
+    pixelDensity(1);
+
+    paletteSelector = createSelect();
+    paletteSelector.position(10, 10);
+    paletteSelector.option('tol-rainbow');
+    paletteSelector.option('tol-dv');
+    paletteSelector.option('tol-sq');
+
     XSlider = createSlider(-2.5, 2.5, 0, 100/maxZoom);
+    XSlider.parent( 'xSlider' );
+
     YSlider = createSlider(-2.5, 2.5, 0, 100/maxZoom);
+    YSlider.parent( 'ySlider' );
+
     ZoomSlider = createSlider(1, maxZoom, maxZoom, 5);
+    ZoomSlider.parent( 'zoomSlider' );
+
     IterationSlider = createSlider(1, 255, 50, 5);
+    IterationSlider.parent( 'iterationSlider' );
 
     frDiv = createDiv('');
 
-    palette = palette('tol-rainbow', 255);
-    // palette = palette('tol-dv', 255);
-    // palette = palette('tol-sq', 255);
+    activePalette = palette( paletteSelector.value(), 255);
 }
 
 
@@ -46,6 +61,8 @@ function draw() {
     var Yval = YSlider.value();
     var zoom = ZoomSlider.value() / maxZoom;
     var maxIterations = IterationSlider.value();
+    activePalette = palette( paletteSelector.value(), 255);
+
 
     loadPixels();
     for (var x = 0; x < width; x++) {
@@ -74,7 +91,7 @@ function draw() {
             if( colorIndex > 254 ) {
                 colorIndex = 254;
             }
-            var color = hexToRgb( palette[colorIndex] );
+            var color = hexToRgb( activePalette[colorIndex] );
 
             if (n == maxIterations) {
                 color = { 'r': 0, 'g': 0, 'b': 0 };

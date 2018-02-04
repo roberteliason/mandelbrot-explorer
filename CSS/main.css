@@ -1,12 +1,71 @@
+@import url('https://fonts.googleapis.com/css?family=Orbitron');
+
 body {
 	background: black;
+	color: aliceblue;
+	font-family: 'Orbitron', sans-serif;
 }
 
-canvas {
+#canvas {
+	position: relative;
+	width: 600px;
+	margin: 2rem auto;
+}
+
+#canvas canvas {
 	display: block;
-	margin: 2rem auto 0 auto;
+	margin: 0 auto;
 }
 
 input[type=range] {
-	width: 24%;
+	width: 600px;
+}
+
+#xSlider {
+	position: absolute;
+	display: inline-block;
+	top: -25px;
+	left: 0px;
+}
+#xSlider:after {
+	content: 'X';
+	position: absolute;
+	right: -20px;
+}
+
+#ySlider {
+	position: absolute;
+	display: inline-block;
+	top: 290px;
+	left: -330px;
+	transform: rotateZ( 90deg );
+}
+#ySlider:before {
+	content: 'Y';
+	position: absolute;
+	left: -20px;
+}
+
+#zoomSlider {
+	position: absolute;
+	display: inline-block;
+	top: 620px;
+	left: -10px;
+}
+#zoomSlider:before {
+	content: 'Zoom';
+	position: absolute;
+	left: -100px;
+}
+
+#iterationSlider {
+	position: absolute;
+	display: inline-block;
+	top: 650px;
+	left: -10px;
+}
+#iterationSlider:before {
+	content: 'Iterations';
+	position: absolute;
+	left: -100px;
 }
