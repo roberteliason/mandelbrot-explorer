@@ -4,45 +4,47 @@
 // Code for: https://youtu.be/6z7GQewK-Ks
 
 var canvas;
-var XSlider;
-var YSlider;
-var ZoomSlider;
-var IterationSlider;
-var paletteSelector;
-var maxZoom;
+var xVal = 0;
+var yVal = 0;
+var maxZoom = 1000000000;
+var xZoom = 1;
+var yZoom = 1;
+var aspectRatio;
+var zoomVal = maxZoom;
+var maxIterations = 128;
+var palettes = ['tol-rainbow', 'tol-dv', 'tol-sq'];
+var xSlider;
+var ySlider;
+var zoomSlider;
 
-var frDiv;
 var activePalette;
+var gui;
 
 
 function setup() {
-    maxZoom = 100000;
-
-    canvas = createCanvas(600, 600);
-    canvas.parent( 'canvas' );
+    canvas = createCanvas(windowWidth, windowHeight);
     pixelDensity(1);
 
-    paletteSelector = createSelect();
-    paletteSelector.position(10, 10);
-    paletteSelector.option('tol-rainbow');
-    paletteSelector.option('tol-dv');
-    paletteSelector.option('tol-sq');
+    gui = createGui('Navigation');
+    sliderRange(-2.5, 2.5, 10 / maxZoom);
+    gui.addGlobals('xVal', 'yVal');
+    sliderRange(1, maxZoom, 1);
+    gui.addGlobals('zoomVal');
+    sliderRange(1, 255, 1);
+    gui.addGlobals('maxIterations');
+    gui.addGlobals('palettes');
 
-    XSlider = createSlider(-2.5, 2.5, 0, 100/maxZoom);
-    XSlider.parent( 'xSlider' );
+    xSlider = document.getElementById('xVal');
+    ySlider = document.getElementById('yVal');
+    zoomSlider = document.getElementById('zoomVal');
 
-    YSlider = createSlider(-2.5, 2.5, 0, 100/maxZoom);
-    YSlider.parent( 'ySlider' );
+    // Stop click through to canvas
+    var guiPalette = document.getElementsByClassName('qs_main');
+    guiPalette[0].addEventListener('click', function (event) {
+        event.stopPropagation();
+    });
 
-    ZoomSlider = createSlider(1, maxZoom, maxZoom, 5);
-    ZoomSlider.parent( 'zoomSlider' );
-
-    IterationSlider = createSlider(1, 255, 50, 5);
-    IterationSlider.parent( 'iterationSlider' );
-
-    frDiv = createDiv('');
-
-    activePalette = palette( paletteSelector.value(), 255);
+    noLoop();
 }
 
 
@@ -57,19 +59,20 @@ function hexToRgb(hex) {
 
 
 function draw() {
-    var Xval = XSlider.value();
-    var Yval = YSlider.value();
-    var zoom = ZoomSlider.value() / maxZoom;
-    var maxIterations = IterationSlider.value();
-    activePalette = palette( paletteSelector.value(), 255);
-
+    activePalette = palette(palettes, 255);
+    aspectRatio = width / height;
 
     loadPixels();
     for (var x = 0; x < width; x++) {
         for (var y = 0; y < height; y++) {
 
-            var a = map(x, 0, width, Xval - (2.5 * zoom), Xval + (2.5 * zoom));
-            var b = map(y, 0, height, Yval - (2.5 * zoom), Yval + (2.5 * zoom));
+            // get visible area of mandelbrot
+            xZoom = (2.5 * zoomVal / maxZoom);
+            yZoom = (2.5 * zoomVal / maxZoom) / aspectRatio;
+
+            // map current pixel to visible area
+            var a = map(x, 0, width, xVal - xZoom, xVal + xZoom);
+            var b = map(y, 0, height, yVal - yZoom, yVal + yZoom);
 
             var ca = a;
             var cb = b;
@@ -88,13 +91,13 @@ function draw() {
             }
 
             var colorIndex = n;
-            if( colorIndex > 254 ) {
+            if (colorIndex > 254) {
                 colorIndex = 254;
             }
-            var color = hexToRgb( activePalette[colorIndex] );
+            var color = hexToRgb(activePalette[colorIndex]);
 
             if (n == maxIterations) {
-                color = { 'r': 0, 'g': 0, 'b': 0 };
+                color = {'r': 0, 'g': 0, 'b': 0};
             }
 
             var pix = (x + y * width) * 4;
@@ -105,6 +108,37 @@ function draw() {
         }
     }
     updatePixels();
+}
 
-    frDiv.html(floor(frameRate()));
+
+function mouseClicked() {
+    // get the extents of visible mandelbrot
+    xZoom = (2.5 * zoomVal / maxZoom);
+    yZoom = (2.5 * zoomVal / maxZoom) / aspectRatio;
+
+    // map clicked position to visible extents and update position
+    xVal = map(mouseX, 0, width, xVal - xZoom, xVal + xZoom);
+    yVal = map(mouseY, 0, height, yVal - yZoom, yVal + yZoom);
+
+    // Zoom in a bit
+    zoomVal = zoomVal / 10;
+    if (zoomVal < 1) {
+        zoomVal = 1;
+    }
+
+    // No double binding on the GUI elements, so force update
+    xSlider.value = xVal;
+    xSlider.parentElement.children[0].innerText = 'xVal: ' + xVal;
+    ySlider.value = yVal;
+    ySlider.parentElement.children[0].innerText = 'yVal: ' + yVal;
+    zoomSlider.value = zoomVal;
+    zoomSlider.parentElement.children[0].innerText = 'zoomVal: ' + zoomVal;
+
+    redraw();
+}
+
+
+// dynamically adjust the canvas to the window
+function windowResized() {
+    resizeCanvas(windowWidth, windowHeight);
 }
