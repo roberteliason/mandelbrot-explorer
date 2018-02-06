@@ -30,7 +30,7 @@ function setup() {
     gui.addGlobals('xVal', 'yVal');
     sliderRange(1, maxZoom, 1);
     gui.addGlobals('zoomVal');
-    sliderRange(1, 255, 1);
+    sliderRange(1, 10000, 1);
     gui.addGlobals('maxIterations');
     gui.addGlobals('palettes');
 
@@ -90,10 +90,7 @@ function draw() {
                 n++;
             }
 
-            var colorIndex = n;
-            if (colorIndex > 254) {
-                colorIndex = 254;
-            }
+            var colorIndex = n % 254;
             var color = hexToRgb(activePalette[colorIndex]);
 
             if (n == maxIterations) {
