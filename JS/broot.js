@@ -4,6 +4,7 @@
 // Code for: https://youtu.be/6z7GQewK-Ks
 
 var canvas;
+var rendering = false;
 var xVal = 0;
 var yVal = 0;
 var maxZoom = 1000000000;
@@ -40,7 +41,7 @@ function setup() {
 
     // Stop click through to canvas
     var guiPalette = document.getElementsByClassName('qs_main');
-    guiPalette[0].addEventListener('click', function (event) {
+    guiPalette[0].addEventListener('mousedown', function (event) {
         event.stopPropagation();
     });
 
@@ -48,27 +49,19 @@ function setup() {
 }
 
 
-function hexToRgb(hex) {
-    var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-    return result ? {
-        r: parseInt(result[1], 16),
-        g: parseInt(result[2], 16),
-        b: parseInt(result[3], 16)
-    } : null;
-}
-
-
 function draw() {
+    rendering = true;
+    cursorBusy();
+
     activePalette = palette(palettes, 255);
     aspectRatio = width / height;
 
     loadPixels();
+
     for (var x = 0; x < width; x++) {
         for (var y = 0; y < height; y++) {
 
-            // get visible area of mandelbrot
-            xZoom = (2.5 * zoomVal / maxZoom);
-            yZoom = (2.5 * zoomVal / maxZoom) / aspectRatio;
+            updateVisibleArea();
 
             // map current pixel to visible area
             var a = map(x, 0, width, xVal - xZoom, xVal + xZoom);
@@ -104,14 +97,89 @@ function draw() {
             pixels[pix + 3] = 255;
         }
     }
+
+    // No double binding on the GUI elements, so force update
+    xSlider.value = xVal;
+    xSlider.parentElement.children[0].innerText = 'xVal: ' + xVal;
+    ySlider.value = yVal;
+    ySlider.parentElement.children[0].innerText = 'yVal: ' + yVal;
+    zoomSlider.value = zoomVal;
+    zoomSlider.parentElement.children[0].innerText = 'zoomVal: ' + zoomVal;
+
     updatePixels();
+
+    rendering = false;
+    cursorReady();
 }
 
 
-function mouseClicked() {
+function mouseWheel(event) {
+    if (rendering === false) {
+        zoomAndRedraw();
+    }
+
+    return false;
+}
+
+
+function mousePressed() {
+    if (rendering === false) {
+        centerAndZoomIn();
+    }
+
+    return false;
+}
+
+
+function keyPressed() {
+    switch( keyCode ) {
+        case LEFT_ARROW:
+            move( 'left' );
+            break;
+
+        case RIGHT_ARROW:
+            move( 'right' );
+            break;
+
+        case UP_ARROW:
+            move( 'up' );
+            break;
+
+        case DOWN_ARROW:
+            move( 'down' );
+            break;
+
+        case ENTER:
+            zoom( 'in' );
+            break;
+
+        case BACKSPACE:
+            zoom( 'out' );
+            break;
+
+        case ESCAPE:
+            reset();
+            break;
+    }
+
+    return false;
+}
+
+
+// dynamically adjust the canvas to the window
+function windowResized() {
+    resizeCanvas(windowWidth, windowHeight);
+}
+
+function updateVisibleArea() {
     // get the extents of visible mandelbrot
     xZoom = (2.5 * zoomVal / maxZoom);
     yZoom = (2.5 * zoomVal / maxZoom) / aspectRatio;
+}
+
+
+function centerAndZoomIn() {
+    updateVisibleArea();
 
     // map clicked position to visible extents and update position
     xVal = map(mouseX, 0, width, xVal - xZoom, xVal + xZoom);
@@ -123,19 +191,100 @@ function mouseClicked() {
         zoomVal = 1;
     }
 
-    // No double binding on the GUI elements, so force update
-    xSlider.value = xVal;
-    xSlider.parentElement.children[0].innerText = 'xVal: ' + xVal;
-    ySlider.value = yVal;
-    ySlider.parentElement.children[0].innerText = 'yVal: ' + yVal;
-    zoomSlider.value = zoomVal;
-    zoomSlider.parentElement.children[0].innerText = 'zoomVal: ' + zoomVal;
+    redraw()
+}
+
+
+function move( direction ) {
+    var xStep = xZoom / 10;
+    var yStep = yZoom / 10;
+
+    switch ( direction ) {
+        case 'up':
+            yVal -= yStep;
+            break;
+
+        case 'down':
+            yVal += yStep;
+            break;
+
+        case 'left':
+            xVal -= xStep;
+            break;
+
+        case 'right':
+            xVal += xStep;
+            break;
+    }
 
     redraw();
 }
 
 
-// dynamically adjust the canvas to the window
-function windowResized() {
-    resizeCanvas(windowWidth, windowHeight);
+function zoom( direction ) {
+    var zoomStep = zoomVal / 10;
+
+    switch( direction ) {
+        case 'in':
+            zoomVal -= zoomStep;
+            break;
+
+        case 'out':
+            zoomVal += zoomStep;
+            break;
+    }
+
+    redraw();
+}
+
+
+function reset() {
+    zoomVal = maxZoom;
+    maxIterations = 128;
+    xVal = 0;
+    yVal = 0;
+
+    redraw();
+}
+
+
+function zoomAndRedraw() {
+    // Zoom is relative to current zoom level
+    zoomVal += event.delta * (zoomVal / 1000);
+
+    // Stay inside set bounds
+    if (zoomVal < 1) {
+        zoomVal = 1;
+    }
+
+    if (zoomVal > maxZoom) {
+        zoomVal = maxZoom;
+    }
+
+    redraw()
+}
+
+
+function cursorBusy() {
+    document.body.style.cursor = 'wait';
+}
+
+function cursorReady() {
+    document.body.style.cursor = 'default';
+}
+
+
+/**
+ * Convert hex color code to object with r, g, b properties
+ *
+ * @param hex
+ * @returns {*}
+ */
+function hexToRgb(hex) {
+    var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result ? {
+        r: parseInt(result[1], 16),
+        g: parseInt(result[2], 16),
+        b: parseInt(result[3], 16)
+    } : null;
 }
